@@ -1,0 +1,7 @@
+object_name: test_object
+columns:
+  - column_name: object_name
+    logical_id: object_name
+    data_type: string
+    max_length: 500
+    index: false

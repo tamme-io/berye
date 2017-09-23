@@ -2,6 +2,7 @@ import os
 import json
 import yaml
 import sys
+import re
 
 class Config(object):
 
@@ -9,12 +10,15 @@ class Config(object):
         self.file_name = self.configFileName()
         self.config_dict = None
 
-        # is it json or yaml?
-        self.format = "yaml"
-        if ".json" in self.file_name:
-            self.format = "json"
+        if self.file_name is not None:
+            # is it json or yaml?
+            self.format = "yaml"
+            if ".json" in self.file_name:
+                self.format = "json"
 
-        self.configDict()
+            self.configDict()
+        else:
+            self.config_dict = {}
 
         # look for the mains
         if host is None:
@@ -37,7 +41,7 @@ class Config(object):
         else:
             self.username = username
 
-        is password is None:
+        if password is None:
             self.password = self.config_dict.get("password", "")
         else:
             self.password = password
@@ -47,7 +51,10 @@ class Config(object):
     def configFileName(self):
         # we need to get the config in here from the appropriate file
         current_directory = os.getcwd()
-        schema_files = os.listdir('%s/schema' % current_directory)
+        try:
+            schema_files = os.listdir('%s/schema' % current_directory)
+        except OSError:
+            return None
         config_files = filter(lambda x: x.split(".")[0] == "berye_config", schema_files)
         if len(config_files) == 0:
             print "No Config Available"
@@ -96,11 +103,11 @@ class Config(object):
             for item in o:
                 item = self.parseConfigVariable(item)
         elif isinstance(o, str):
-            o = parseConfigString(o)
+            o = self.parseConfigString(o)
         elif isinstance(o, unicode):
             try:
                 item = str(o)
-                o = parseConfigString(item)
+                o = self.parseConfigString(item)
             except Exception as exception:
                 print "There was an error trying to parse %u: %s" % (o, str(exception))
                 return None
@@ -108,14 +115,14 @@ class Config(object):
 
 
     def parseConfigString(self, o):
-        env_start = "@@{"
-        env_end = "}@@"
+        env_start = '\${'
+        env_end = '}'
         env_var_refs = re.findall(env_start + '(.*?)' + env_end, o, re.DOTALL)
         for ref in env_var_refs:
-            o.replace(env_start + ref + env_end, self.parseEnvVariable(ref))
+            o = o.replace("${" + ref + env_end, self.parseEnvVariable(ref))
         return o
 
 
     def parseEnvVariable(self, variable_name):
-        variable_name = variable_name.uppercase()
+        variable_name = variable_name.upper()
         return os.environ.get(variable_name, "")

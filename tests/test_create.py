@@ -13,5 +13,5 @@ import Berye
 
 class TestCreate(object):
 
-    def test_readSchema(self):
+    def test_createDatabase(self):
         assert 0

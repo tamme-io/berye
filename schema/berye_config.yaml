@@ -1,0 +1,5 @@
+# Berye Test Database Connection Details
+host: localhost
+port: 3306
+database: testberyedatabase
+username: root
