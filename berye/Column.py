@@ -2,6 +2,8 @@ import json
 import yaml
 import os
 import sys
+import random
+import string
 
 
 from Database import Database
@@ -75,7 +77,10 @@ class Column(object):
         self.changes = []
 
         if self.reference_table:
-            key_name = "%s_%s" % (self.reference_table, self.reference_column)
+            rand_str = lambda n: ''.join([random.choice(string.lowercase) for i in xrange(n)])
+            # Now to generate a random string of length 10
+            s = rand_str(4)
+            key_name = "%s_%s_%s" % (self.reference_table, self.reference_column, s)
             self.foreign_key_name = column_data.get("foreign_key_name", key_name)
         else:
             self.foreign_key_name = column_data.get("foreign_key_name")
