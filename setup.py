@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name='berye',
-    version='0.1',
+    version='0.2',
     description='A library for making the management of our MySQL schema easier for our lambda services',
     url='https://github.com/tamme-io/berye',
     author='tamme',
