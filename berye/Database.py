@@ -8,6 +8,7 @@ import mysql.connector
 from Config import Config
 
 
+LOGICAL_IDS_NAME = "berye_logical_ids"
 
 class Database(object):
 
@@ -16,6 +17,7 @@ class Database(object):
         self.config = None
         self.connection = None
         self.super_connection = None
+        self.tables = []
         return None
 
 
@@ -48,11 +50,82 @@ class Database(object):
         rows = []
         for row in create_cursor:
             rows.append(row)
+        self.createLogicalIdTable()
         return rows
 
 
+    def logicalTableExists(self):
+        return (LOGICAL_IDS_NAME in self.tableNames())
+
+
+    def tableNames(self):
+        querystring = "SHOW TABLES;"
+        rows = self.query(querystring)
+        table_names = map(lambda x: x.get("Tables_in_" + self.config.database), rows)
+        return table_names
+
+
+    def createLogicalIdTable(self):
+        querystring = "CREATE TABLE " + LOGICAL_IDS_NAME + " "
+        querystring += """
+            (
+            table_name VARCHAR(255),
+            column_name VARCHAR(255),
+            logical_id VARCHAR(255),
+            id INT NOT NULL AUTO_INCREMENT UNIQUE PRIMARY KEY,
+            INDEX (id),
+            INDEX (table_name),
+            INDEX (column_name),
+            INDEX (logical_id)
+            );
+        """
+        print "Query"
+        print querystring
+        rows = self.query(querystring)
+        return rows
+
+
+    def migrate(self):
+        # TODO : THIS IS AN UGLY HACK, FIX THIS
+        from berye.Table import Table
+        if not self.exists():
+            self.create()
+        # get all of the schema files
+        current_directory = os.getcwd()
+        schema_files = os.listdir("%s/schema/" % current_directory)
+        schema_files = filter(lambda x: "berye_config" not in x, schema_files)
+        table_names = map(lambda x: x.split(".")[0], schema_files)
+        for table_name in table_names:
+            if table_name not in self.tables:
+                self.tables.append(Table(table_name, database=self))
+
+        existing_tables = filter(lambda x: x.exists(), self.tables)
+        new_tables = filter(lambda x: x.exists() == False, self.tables)
+
+        # migrate all of the tables
+        for table in self.tables:
+            table.migrate()
+
+        # migrate all of the foreign keys
+        for table in new_tables:
+            table.createForeignKeys()
+        for table in existing_tables:
+            table.addNewForeignKeys()
+
+        # find any tables that need to be dropped
+        table_names.append(LOGICAL_IDS_NAME)
+        database_table_names = self.tableNames()
+        superfluous_tables = filter(lambda x: x not in table_names, database_table_names)
+        for table_name in superfluous_tables:
+            dropquery = "DROP TABLE %s;" % table_name
+            print dropquery
+            self.query(dropquery)
+
+        return None
+
+
     def connect(self):
-        if self.connection is not None and not self.connection.closed():
+        if self.connection is not None and self.connection.is_connected():
             return self.connection
         self.configure()
         if self.database_type == "mysql":
@@ -85,10 +158,12 @@ class Database(object):
 
 
     def query(self, query):
+        print "Query:: %s" % query
         self.connect()
-        cursor = self.connection.cursor()
+        cursor = self.connection.cursor(buffered=True, dictionary=True)
         cursor.execute(query)
-        self.connection.ocmmit()
+
+        self.connection.commit()
         rows = []
         for row in cursor:
             rows.append(row)

@@ -1,0 +1,6 @@
+object_name: person
+columns:
+  - column_name: name
+    logical_id: name
+    data_type: VARCHAR(50)
+    primary_key: false

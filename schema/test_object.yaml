@@ -2,6 +2,57 @@ object_name: test_object
 columns:
   - column_name: object_name
     logical_id: object_name
-    data_type: string
+    data_type: VARCHAR(200)
     max_length: 500
     index: false
+    primary_key: false
+    auto_increment: false
+    comment: This is a test column for the name of the object
+
+  - column_name: object_things
+    logical_id: object_thingy
+    data_type: INT(5)
+    max_length: 500
+    index: true
+    primary_key: false
+    auto_increment: false
+    default: 10
+    unique: true
+    check: '> 9'
+    comment: This is a test column for the name of the object
+
+  - column_name: id
+    logical_id: id
+    data_type: INT
+    primary_key: true
+    auto_increment: true
+    not_null: true
+
+  - column_name: person_id
+    logical_id: person_id
+    data_type: INT
+    foreign_key: true
+    reference_table: people
+    reference_column: id
+
+
+
+# constraints
+# foreign key
+# index
+# primary key
+# auto_increment
+# comment
+# unique
+
+# column_format
+# storage
+
+
+# unique
+# primary_key
+# foreign_key
+
+# check
+# not_null
+# default
