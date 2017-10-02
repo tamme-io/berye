@@ -296,7 +296,7 @@ class Table(object):
         key_sql = map(lambda x: x.createForeignKeySql(), foreign_keys)
         sql = "ALTER TABLE %s %s;" % (
             self.name,
-            " ".join(key_sql)
+            ", ".join(key_sql)
         )
         print sql
         rows = self.database.query(sql)
